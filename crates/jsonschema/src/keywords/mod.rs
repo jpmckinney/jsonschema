@@ -43,17 +43,204 @@ use core::fmt;
 use referencing::{Draft, Vocabulary};
 use serde_json::{Map, Value};
 
-use crate::{compiler, error, validator::Validate};
+use crate::{
+    compiler, error,
+    paths::LazyLocation,
+    properties::{BigValidatorsMap, SmallValidatorsMap},
+    validator::{PartialApplication, Validate},
+    ErrorIterator, ValidationError,
+};
 
-pub(crate) type CompilationResult<'a> = Result<BoxedValidator, error::ValidationError<'a>>;
-pub(crate) type BoxedValidator = Box<dyn Validate + Send + Sync>;
+pub(crate) type CompilationResult<'a> = Result<KeywordValue, error::ValidationError<'a>>;
 
 type CompileFunc<'a> =
     fn(&'a compiler::Context, &'a Map<String, Value>, &'a Value) -> Option<CompilationResult<'a>>;
 
+macro_rules! keyword_value {
+    (
+        $(
+            $variant:ident($($type:ident)::+ $(< $($generic:ident)::+ >)?),
+        )*
+    ) => {
+        pub(crate) enum KeywordValue {
+            $(
+                $variant($($type)::+ $(< $($generic)::+ >)?),
+            )*
+        }
+
+        $(
+            impl From<$($type)::+ $(< $($generic)::+ >)?> for KeywordValue {
+                fn from(value: $($type)::+ $(< $($generic)::+ >)?) -> Self {
+                    Self::$variant(value)
+                }
+            }
+        )*
+
+        impl KeywordValue {
+            pub(crate) fn is_valid(&self, instance: &Value) -> bool {
+                match self {
+                    $(
+                        Self::$variant(v) => v.is_valid(instance),
+                    )*
+                }
+            }
+
+            pub(crate) fn iter_errors<'i>(
+                &self,
+                instance: &'i Value,
+                location: &LazyLocation,
+            ) -> ErrorIterator<'i> {
+                match self {
+                    $(
+                        Self::$variant(v) => v.iter_errors(instance, location),
+                    )*
+                }
+            }
+
+            pub(crate) fn apply<'a>(
+                &'a self,
+                instance: &Value,
+                location: &LazyLocation,
+            ) -> PartialApplication<'a> {
+                match self {
+                    $(
+                        Self::$variant(v) => v.apply(instance, location),
+                    )*
+                }
+            }
+
+            pub(crate) fn validate<'i>(
+                &self,
+                instance: &'i Value,
+                location: &LazyLocation,
+            ) -> Result<(), ValidationError<'i>> {
+                match self {
+                    $(
+                        Self::$variant(v) => v.validate(instance, location),
+                    )*
+                }
+            }
+        }
+    };
+}
+
+keyword_value! {
+    Custom(custom::CustomKeyword),
+    Draft4MultipleTypes(legacy::type_draft_4::MultipleTypesValidator),
+    Draft4IntegerType(legacy::type_draft_4::IntegerTypeValidator),
+    AdditionalItemsObject(additional_items::AdditionalItemsObjectValidator),
+    AdditionalItemsBool(additional_items::AdditionalItemsBooleanValidator),
+    AdditionalProperties(additional_properties::AdditionalPropertiesValidator),
+    AdditionalPropertiesFalse(additional_properties::AdditionalPropertiesFalseValidator),
+    AdditionalPropertiesWithPatterns(additional_properties::AdditionalPropertiesWithPatternsValidator),
+    AdditionalPropertiesWithPatternsFalse(additional_properties::AdditionalPropertiesWithPatternsFalseValidator),
+    AdditionalPropertiesWithPatternsFalseNonEmptySmall(additional_properties::AdditionalPropertiesWithPatternsNotEmptyValidator<SmallValidatorsMap>),
+    AdditionalPropertiesWithPatternsFalseNonEmptyBig(additional_properties::AdditionalPropertiesWithPatternsNotEmptyValidator<BigValidatorsMap>),
+    AdditionalPropertiesWithPatternsNotEmptyFalseSmall(additional_properties::AdditionalPropertiesWithPatternsNotEmptyFalseValidator<SmallValidatorsMap>),
+    AdditionalPropertiesWithPatternsNotEmptyFalseBig(additional_properties::AdditionalPropertiesWithPatternsNotEmptyFalseValidator<BigValidatorsMap>),
+    AdditionalPropertiesNotEmptyFalseSmall(additional_properties::AdditionalPropertiesNotEmptyFalseValidator<SmallValidatorsMap>),
+    AdditionalPropertiesNotEmptyFalseBig(additional_properties::AdditionalPropertiesNotEmptyFalseValidator<BigValidatorsMap>),
+    AdditionalPropertiesNotEmptySmall(additional_properties::AdditionalPropertiesNotEmptyValidator<SmallValidatorsMap>),
+    AdditionalPropertiesNotEmptyBig(additional_properties::AdditionalPropertiesNotEmptyValidator<BigValidatorsMap>),
+    AllOf(all_of::AllOfValidator),
+    AllOfSingle(all_of::SingleValueAllOfValidator),
+    AnyOf(any_of::AnyOfValidator),
+    Boolean(boolean::FalseValidator),
+    ConstObject(const_::ConstObjectValidator),
+    ConstArray(const_::ConstArrayValidator),
+    ConstString(const_::ConstStringValidator),
+    ConstNumber(const_::ConstNumberValidator),
+    ConstNull(const_::ConstNullValidator),
+    ConstBool(const_::ConstBooleanValidator),
+    Contains(contains::ContainsValidator),
+    ContainsMax(contains::MaxContainsValidator),
+    ContainsMin(contains::MinContainsValidator),
+    ContainsMinMax(contains::MinMaxContainsValidator),
+    ContentEncoding(content::ContentEncodingValidator),
+    ContentMediaType(content::ContentMediaTypeValidator),
+    ContentMediaTypeAndEncoding(content::ContentMediaTypeAndEncodingValidator),
+    Dependencies(dependencies::DependenciesValidator),
+    DependentSchemas(dependencies::DependentSchemasValidator),
+    DependentRequired(dependencies::DependentRequiredValidator),
+    Enum(enum_::EnumValidator),
+    EnumSingle(enum_::SingleValueEnumValidator),
+    ExclusiveMaximumU64(exclusive_maximum::ExclusiveMaximumU64Validator),
+    ExclusiveMaximumI64(exclusive_maximum::ExclusiveMaximumI64Validator),
+    ExclusiveMaximumF64(exclusive_maximum::ExclusiveMaximumF64Validator),
+    ExclusiveMinimumU64(exclusive_minimum::ExclusiveMinimumU64Validator),
+    ExclusiveMinimumI64(exclusive_minimum::ExclusiveMinimumI64Validator),
+    ExclusiveMinimumF64(exclusive_minimum::ExclusiveMinimumF64Validator),
+    FormatDate(format::DateValidator),
+    FormatDateTime(format::DateTimeValidator),
+    FormatDuration(format::DurationValidator),
+    FormatEmail(format::EmailValidator),
+    FormatHostname(format::HostnameValidator),
+    FormatIdnEmail(format::IdnEmailValidator),
+    FormatIdnHostname(format::IdnHostnameValidator),
+    FormatIpV4(format::IpV4Validator),
+    FormatIpV6(format::IpV6Validator),
+    FormatIri(format::IriValidator),
+    FormatIriReference(format::IriReferenceValidator),
+    FormatJsonPointer(format::JsonPointerValidator),
+    FormatRegex(format::RegexValidator),
+    FormatRelativeJsonPointer(format::RelativeJsonPointerValidator),
+    FormatTime(format::TimeValidator),
+    FormatUri(format::UriValidator),
+    FormatUriReference(format::UriReferenceValidator),
+    FormatUriTemplate(format::UriTemplateValidator),
+    FormatUuid(format::UuidValidator),
+    FormatCustom(format::CustomFormatValidator),
+    IfElse(Box<if_::IfElseValidator>),
+    IfThen(Box<if_::IfThenValidator>),
+    IfThenElse(Box<if_::IfThenElseValidator>),
+    ItemsArray(items::ItemsArrayValidator),
+    ItemsObject(items::ItemsObjectValidator),
+    ItemsObjectSkipPrefix(items::ItemsObjectSkipPrefixValidator),
+    MaxItems(max_items::MaxItemsValidator),
+    MaxLength(max_length::MaxLengthValidator),
+    MaxProperties(max_properties::MaxPropertiesValidator),
+    MaximumU64(maximum::MaximumU64Validator),
+    MaximumI64(maximum::MaximumI64Validator),
+    MaximumF64(maximum::MaximumF64Validator),
+    MinItems(min_items::MinItemsValidator),
+    MinLength(min_length::MinLengthValidator),
+    MinProperties(min_properties::MinPropertiesValidator),
+    MinimumU64(minimum::MinimumU64Validator),
+    MinimumI64(minimum::MinimumI64Validator),
+    MinimumF64(minimum::MinimumF64Validator),
+    MultipleOfFloat(multiple_of::MultipleOfFloatValidator),
+    MultipleOfInteger(multiple_of::MultipleOfIntegerValidator),
+    Not(not::NotValidator),
+    OneOf(one_of::OneOfValidator),
+    Pattern(pattern::PatternValidator),
+    SinglePatternProperties(pattern_properties::SingleValuePatternPropertiesValidator),
+    PatternProperties(pattern_properties::PatternPropertiesValidator),
+    PrefixItems(prefix_items::PrefixItemsValidator),
+    Properties(properties::PropertiesValidator),
+    PropertyNamesBoolean(property_names::PropertyNamesBooleanValidator),
+    PropertyNamesObject(property_names::PropertyNamesObjectValidator),
+    LazyRef(ref_::LazyRefValidator),
+    Ref(ref_::RefValidator),
+    SingleRequired(required::SingleItemRequiredValidator),
+    Required(required::RequiredValidator),
+    MultipleTypes(type_::MultipleTypesValidator),
+    BooleanType(type_::BooleanTypeValidator),
+    NullType(type_::NullTypeValidator),
+    IntegerType(type_::IntegerTypeValidator),
+    NumberType(type_::NumberTypeValidator),
+    StringType(type_::StringTypeValidator),
+    ObjectType(type_::ObjectTypeValidator),
+    ArrayType(type_::ArrayTypeValidator),
+    UnevaluatedItems2019(unevaluated_items::UnevaluatedItemsValidator<unevaluated_items::Draft2019ItemsFilter>),
+    UnevaluatedItems(unevaluated_items::UnevaluatedItemsValidator<unevaluated_items::DefaultItemsFilter>),
+    UnevaluatedProperties2019(unevaluated_properties::UnevaluatedPropertiesValidator<unevaluated_properties::Draft2019PropertiesFilter>),
+    UnevaluatedProperties(unevaluated_properties::UnevaluatedPropertiesValidator<unevaluated_properties::DefaultPropertiesFilter>),
+    UniqueItems(unique_items::UniqueItemsValidator),
+}
+
 #[derive(Debug, Clone)]
-pub(crate) enum Keyword {
-    Buildin(BuiltinKeyword),
+pub(crate) enum KeywordKind {
+    Builtin(BuiltinKeyword),
     Custom(Box<str>),
 }
 
@@ -150,25 +337,25 @@ impl BuiltinKeyword {
     }
 }
 
-impl Keyword {
+impl KeywordKind {
     pub(crate) fn custom(name: impl Into<String>) -> Self {
-        Keyword::Custom(name.into().into_boxed_str())
+        KeywordKind::Custom(name.into().into_boxed_str())
     }
     pub(crate) fn as_str(&self) -> &str {
         match self {
-            Self::Buildin(d) => d.as_str(),
+            Self::Builtin(d) => d.as_str(),
             Self::Custom(s) => s,
         }
     }
 }
 
-impl From<BuiltinKeyword> for Keyword {
+impl From<BuiltinKeyword> for KeywordKind {
     fn from(value: BuiltinKeyword) -> Self {
-        Keyword::Buildin(value)
+        KeywordKind::Builtin(value)
     }
 }
 
-impl fmt::Display for Keyword {
+impl fmt::Display for KeywordKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
     }
@@ -177,7 +364,7 @@ impl fmt::Display for Keyword {
 pub(crate) fn get_for_draft<'a>(
     ctx: &compiler::Context<'a>,
     keyword: &'a str,
-) -> Option<(Keyword, CompileFunc<'a>)> {
+) -> Option<(KeywordKind, CompileFunc<'a>)> {
     match (ctx.draft(), keyword) {
         // Keywords common to all drafts
         (_, "$ref") => Some((BuiltinKeyword::Ref.into(), ref_::compile_ref)),

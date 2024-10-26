@@ -109,24 +109,27 @@ pub(crate) fn compile<'a>(
     if let Value::Number(limit) = schema {
         let location = ctx.location().join("exclusiveMaximum");
         if let Some(limit) = limit.as_u64() {
-            Some(Ok(Box::new(ExclusiveMaximumU64Validator {
+            Some(Ok(ExclusiveMaximumU64Validator {
                 limit,
                 limit_val: (*schema).clone(),
                 location,
-            })))
+            }
+            .into()))
         } else if let Some(limit) = limit.as_i64() {
-            Some(Ok(Box::new(ExclusiveMaximumI64Validator {
+            Some(Ok(ExclusiveMaximumI64Validator {
                 limit,
                 limit_val: (*schema).clone(),
                 location,
-            })))
+            }
+            .into()))
         } else {
             let limit = limit.as_f64().expect("Always valid");
-            Some(Ok(Box::new(ExclusiveMaximumF64Validator {
+            Some(Ok(ExclusiveMaximumF64Validator {
                 limit,
                 limit_val: (*schema).clone(),
                 location,
-            })))
+            }
+            .into()))
         }
     } else {
         Some(Err(ValidationError::single_type_error(

@@ -42,16 +42,30 @@ pub(crate) struct UnevaluatedPropertiesValidator<F: PropertiesFilter> {
     filter: F,
 }
 
-impl<F: PropertiesFilter> UnevaluatedPropertiesValidator<F> {
+impl UnevaluatedPropertiesValidator<DefaultPropertiesFilter> {
     #[inline]
     pub(crate) fn compile<'a>(
         ctx: &'a compiler::Context,
         parent: &'a Map<String, Value>,
     ) -> CompilationResult<'a> {
-        Ok(Box::new(UnevaluatedPropertiesValidator {
+        Ok(UnevaluatedPropertiesValidator {
             location: ctx.location().join("unevaluatedProperties"),
-            filter: F::new(ctx, parent)?,
-        }))
+            filter: DefaultPropertiesFilter::new(ctx, parent)?,
+        }
+        .into())
+    }
+}
+impl UnevaluatedPropertiesValidator<Draft2019PropertiesFilter> {
+    #[inline]
+    pub(crate) fn compile<'a>(
+        ctx: &'a compiler::Context,
+        parent: &'a Map<String, Value>,
+    ) -> CompilationResult<'a> {
+        Ok(UnevaluatedPropertiesValidator {
+            location: ctx.location().join("unevaluatedProperties"),
+            filter: Draft2019PropertiesFilter::new(ctx, parent)?,
+        }
+        .into())
     }
 }
 
@@ -100,9 +114,9 @@ impl<F: PropertiesFilter> Validate for UnevaluatedPropertiesValidator<F> {
     }
 }
 
-struct Draft2019PropertiesFilter {
-    unevaluated: Option<SchemaNode>,
-    additional: Option<SchemaNode>,
+pub(crate) struct Draft2019PropertiesFilter {
+    unevaluated: Option<Box<SchemaNode>>,
+    additional: Option<Box<SchemaNode>>,
     properties: Vec<(String, SchemaNode)>,
     dependent: Vec<(String, Self)>,
     pattern_properties: Vec<(fancy_regex::Regex, SchemaNode)>,
@@ -262,7 +276,10 @@ impl PropertiesFilter for Draft2019PropertiesFilter {
 
         let mut additional = None;
         if let Some(subschema) = parent.get("additionalProperties") {
-            additional = Some(compiler::compile(ctx, ctx.as_resource_ref(subschema))?);
+            additional = Some(Box::new(compiler::compile(
+                ctx,
+                ctx.as_resource_ref(subschema),
+            )?));
         }
 
         let mut pattern_properties = Vec::new();
@@ -287,7 +304,10 @@ impl PropertiesFilter for Draft2019PropertiesFilter {
 
         let mut unevaluated = None;
         if let Some(subschema) = parent.get("unevaluatedProperties") {
-            unevaluated = Some(compiler::compile(ctx, ctx.as_resource_ref(subschema))?);
+            unevaluated = Some(Box::new(compiler::compile(
+                ctx,
+                ctx.as_resource_ref(subschema),
+            )?));
         };
 
         let mut all_of = None;
@@ -410,13 +430,13 @@ impl PropertiesFilter for Draft2019PropertiesFilter {
     }
 
     fn unevaluated(&self) -> Option<&SchemaNode> {
-        self.unevaluated.as_ref()
+        self.unevaluated.as_deref()
     }
 }
 
-struct DefaultPropertiesFilter {
-    unevaluated: Option<SchemaNode>,
-    additional: Option<SchemaNode>,
+pub(crate) struct DefaultPropertiesFilter {
+    unevaluated: Option<Box<SchemaNode>>,
+    additional: Option<Box<SchemaNode>>,
     properties: Vec<(String, SchemaNode)>,
     dependent: Vec<(String, Self)>,
     pattern_properties: Vec<(fancy_regex::Regex, SchemaNode)>,
@@ -519,7 +539,10 @@ impl PropertiesFilter for DefaultPropertiesFilter {
 
         let mut additional = None;
         if let Some(subschema) = parent.get("additionalProperties") {
-            additional = Some(compiler::compile(ctx, ctx.as_resource_ref(subschema))?);
+            additional = Some(Box::new(compiler::compile(
+                ctx,
+                ctx.as_resource_ref(subschema),
+            )?));
         }
 
         let mut pattern_properties = Vec::new();
@@ -544,7 +567,10 @@ impl PropertiesFilter for DefaultPropertiesFilter {
 
         let mut unevaluated = None;
         if let Some(subschema) = parent.get("unevaluatedProperties") {
-            unevaluated = Some(compiler::compile(ctx, ctx.as_resource_ref(subschema))?);
+            unevaluated = Some(Box::new(compiler::compile(
+                ctx,
+                ctx.as_resource_ref(subschema),
+            )?));
         };
 
         let mut all_of = None;
@@ -665,7 +691,7 @@ impl PropertiesFilter for DefaultPropertiesFilter {
     }
 
     fn unevaluated(&self) -> Option<&SchemaNode> {
-        self.unevaluated.as_ref()
+        self.unevaluated.as_deref()
     }
 }
 

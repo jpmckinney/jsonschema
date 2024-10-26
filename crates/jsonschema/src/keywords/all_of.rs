@@ -28,7 +28,7 @@ impl AllOfValidator {
             let validators = compiler::compile(&ctx, ctx.as_resource_ref(item))?;
             schemas.push(validators)
         }
-        Ok(Box::new(AllOfValidator { schemas }))
+        Ok(AllOfValidator { schemas }.into())
     }
 }
 
@@ -68,7 +68,7 @@ impl Validate for AllOfValidator {
 }
 
 pub(crate) struct SingleValueAllOfValidator {
-    node: SchemaNode,
+    node: Box<SchemaNode>,
 }
 
 impl SingleValueAllOfValidator {
@@ -76,8 +76,8 @@ impl SingleValueAllOfValidator {
     pub(crate) fn compile<'a>(ctx: &compiler::Context, schema: &'a Value) -> CompilationResult<'a> {
         let ctx = ctx.new_at_location("allOf");
         let ctx = ctx.new_at_location(0);
-        let node = compiler::compile(&ctx, ctx.as_resource_ref(schema))?;
-        Ok(Box::new(SingleValueAllOfValidator { node }))
+        let node = Box::new(compiler::compile(&ctx, ctx.as_resource_ref(schema))?);
+        Ok(SingleValueAllOfValidator { node }.into())
     }
 }
 

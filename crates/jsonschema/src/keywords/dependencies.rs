@@ -35,7 +35,7 @@ impl DependenciesValidator {
                     };
                 dependencies.push((key.clone(), s))
             }
-            Ok(Box::new(DependenciesValidator { dependencies }))
+            Ok(DependenciesValidator { dependencies }.into())
         } else {
             Err(ValidationError::single_type_error(
                 Location::new(),
@@ -128,7 +128,7 @@ impl DependentRequiredValidator {
                     ));
                 }
             }
-            Ok(Box::new(DependentRequiredValidator { dependencies }))
+            Ok(DependentRequiredValidator { dependencies }.into())
         } else {
             Err(ValidationError::single_type_error(
                 Location::new(),
@@ -196,7 +196,7 @@ impl DependentSchemasValidator {
                 let schema_nodes = compiler::compile(&ctx, ctx.as_resource_ref(subschema))?;
                 dependencies.push((key.clone(), schema_nodes));
             }
-            Ok(Box::new(DependentSchemasValidator { dependencies }))
+            Ok(DependentSchemasValidator { dependencies }.into())
         } else {
             Err(ValidationError::single_type_error(
                 Location::new(),

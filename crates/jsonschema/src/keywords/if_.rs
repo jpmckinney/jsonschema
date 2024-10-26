@@ -30,7 +30,8 @@ impl IfThenValidator {
                 let ctx = ctx.new_at_location("then");
                 compiler::compile(&ctx, ctx.as_resource_ref(then_schema))?
             },
-        }))
+        })
+        .into())
     }
 }
 
@@ -98,7 +99,8 @@ impl IfElseValidator {
                 let ctx = ctx.new_at_location("else");
                 compiler::compile(&ctx, ctx.as_resource_ref(else_schema))?
             },
-        }))
+        })
+        .into())
     }
 }
 
@@ -170,7 +172,8 @@ impl IfThenElseValidator {
                 let ctx = ctx.new_at_location("else");
                 compiler::compile(&ctx, ctx.as_resource_ref(else_schema))?
             },
-        }))
+        })
+        .into())
     }
 }
 

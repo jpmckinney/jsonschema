@@ -1,7 +1,7 @@
 //! Facilities for working with paths within schemas or validated instances.
 use std::{fmt, sync::Arc};
 
-use crate::keywords::Keyword;
+use crate::keywords::KeywordKind;
 
 /// A location segment.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -105,11 +105,11 @@ impl<'a> From<&'a LazyLocation<'_, '_>> for Location {
     }
 }
 
-impl<'a> From<&'a Keyword> for LocationSegment<'a> {
-    fn from(value: &'a Keyword) -> Self {
+impl<'a> From<&'a KeywordKind> for LocationSegment<'a> {
+    fn from(value: &'a KeywordKind) -> Self {
         match value {
-            Keyword::Buildin(k) => LocationSegment::Property(k.as_str()),
-            Keyword::Custom(s) => LocationSegment::Property(s),
+            KeywordKind::Builtin(k) => LocationSegment::Property(k.as_str()),
+            KeywordKind::Custom(s) => LocationSegment::Property(s),
         }
     }
 }

@@ -5,7 +5,7 @@ use crate::{
         self,
         custom::{CustomKeyword, KeywordFactory},
         format::Format,
-        BoxedValidator, BuiltinKeyword, Keyword,
+        BuiltinKeyword, KeywordKind, KeywordValue,
     },
     node::SchemaNode,
     options::ValidationOptions,
@@ -400,8 +400,8 @@ pub(crate) fn compile_with<'a>(
                 if let Some(factory) = ctx.get_keyword_factory(keyword) {
                     let path = ctx.location().join(keyword);
                     let validator = CustomKeyword::new(factory.init(schema, value, path)?);
-                    let validator: BoxedValidator = Box::new(validator);
-                    validators.push((Keyword::custom(keyword), validator));
+                    let validator: KeywordValue = validator.into();
+                    validators.push((KeywordKind::custom(keyword), validator));
                 } else if let Some((keyword, validator)) = keywords::get_for_draft(ctx, keyword)
                     .and_then(|(keyword, f)| f(ctx, schema, value).map(|v| (keyword, v)))
                 {

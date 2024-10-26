@@ -15,7 +15,7 @@ use referencing::{Draft, List, Registry, Resource, Uri, VocabularySet};
 use serde_json::{Map, Value};
 
 pub(crate) enum RefValidator {
-    Default { inner: SchemaNode },
+    Default { inner: Box<SchemaNode> },
     Lazy(LazyRefValidator),
 }
 
@@ -43,7 +43,7 @@ impl RefValidator {
                         }
                     }
                 }
-                Ok(Box::new(RefValidator::Lazy(LazyRefValidator {
+                Ok(RefValidator::Lazy(LazyRefValidator {
                     resource,
                     config: Arc::clone(ctx.config()),
                     registry: Arc::clone(&ctx.registry),
@@ -53,7 +53,8 @@ impl RefValidator {
                     vocabularies: ctx.vocabularies().clone(),
                     draft: ctx.draft(),
                     inner: OnceCell::default(),
-                })))
+                })
+                .into())
             } else {
                 let (contents, resolver, draft) = match ctx.lookup(reference) {
                     Ok(resolved) => resolved.into_inner(),
@@ -73,7 +74,10 @@ impl RefValidator {
                     Ok(inner) => inner,
                     Err(error) => return Some(Err(error)),
                 };
-                Ok(Box::new(RefValidator::Default { inner }))
+                Ok(RefValidator::Default {
+                    inner: Box::new(inner),
+                }
+                .into())
             },
         )
     }
@@ -95,7 +99,7 @@ pub(crate) struct LazyRefValidator {
     vocabularies: VocabularySet,
     location: Location,
     draft: Draft,
-    inner: OnceCell<SchemaNode>,
+    inner: OnceCell<Box<SchemaNode>>,
 }
 
 impl LazyRefValidator {
@@ -109,7 +113,7 @@ impl LazyRefValidator {
         if let Some(id) = resource.id() {
             base_uri = resolver.resolve_against(&base_uri.borrow(), id)?;
         };
-        Ok(Box::new(LazyRefValidator {
+        Ok(LazyRefValidator {
             resource,
             config: Arc::clone(ctx.config()),
             registry: Arc::clone(&ctx.registry),
@@ -119,7 +123,8 @@ impl LazyRefValidator {
             location: ctx.location().join("$recursiveRef"),
             draft: ctx.draft(),
             inner: OnceCell::default(),
-        }))
+        }
+        .into())
     }
     fn lazy_compile(&self) -> &SchemaNode {
         self.inner.get_or_init(|| {
@@ -137,7 +142,7 @@ impl LazyRefValidator {
             );
             // INVARIANT: This schema was already used during compilation before detecting a
             // reference cycle that lead to building this validator.
-            compiler::compile(&ctx, self.resource.as_ref()).expect("Invalid schema")
+            Box::new(compiler::compile(&ctx, self.resource.as_ref()).expect("Invalid schema"))
         })
     }
 }

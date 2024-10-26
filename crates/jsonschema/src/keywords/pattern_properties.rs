@@ -40,7 +40,7 @@ impl PatternPropertiesValidator {
                 compiler::compile(&pctx, pctx.as_resource_ref(subschema))?,
             ));
         }
-        Ok(Box::new(PatternPropertiesValidator { patterns }))
+        Ok(PatternPropertiesValidator { patterns }.into())
     }
 }
 
@@ -119,7 +119,7 @@ impl Validate for PatternPropertiesValidator {
 
 pub(crate) struct SingleValuePatternPropertiesValidator {
     pattern: Regex,
-    node: SchemaNode,
+    node: Box<SchemaNode>,
 }
 
 impl SingleValuePatternPropertiesValidator {
@@ -131,7 +131,7 @@ impl SingleValuePatternPropertiesValidator {
     ) -> CompilationResult<'a> {
         let kctx = ctx.new_at_location("patternProperties");
         let pctx = kctx.new_at_location(pattern);
-        Ok(Box::new(SingleValuePatternPropertiesValidator {
+        Ok(SingleValuePatternPropertiesValidator {
             pattern: {
                 match ecma::to_rust_regex(pattern).map(|pattern| Regex::new(&pattern)) {
                     Ok(Ok(r)) => r,
@@ -145,8 +145,9 @@ impl SingleValuePatternPropertiesValidator {
                     }
                 }
             },
-            node: compiler::compile(&pctx, pctx.as_resource_ref(schema))?,
-        }))
+            node: Box::new(compiler::compile(&pctx, pctx.as_resource_ref(schema))?),
+        }
+        .into())
     }
 }
 

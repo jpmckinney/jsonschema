@@ -28,7 +28,7 @@ impl PropertiesValidator {
                         compiler::compile(&ctx, ctx.as_resource_ref(subschema))?,
                     ));
                 }
-                Ok(Box::new(PropertiesValidator { properties }))
+                Ok(PropertiesValidator { properties }.into())
             }
             _ => Err(ValidationError::single_type_error(
                 Location::new(),

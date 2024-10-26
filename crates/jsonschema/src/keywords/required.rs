@@ -30,7 +30,7 @@ impl RequiredValidator {
                 }
             }
         }
-        Ok(Box::new(RequiredValidator { required, location }))
+        Ok(RequiredValidator { required, location }.into())
     }
 }
 
@@ -95,10 +95,11 @@ pub(crate) struct SingleItemRequiredValidator {
 impl SingleItemRequiredValidator {
     #[inline]
     pub(crate) fn compile(value: &str, location: Location) -> CompilationResult {
-        Ok(Box::new(SingleItemRequiredValidator {
+        Ok(SingleItemRequiredValidator {
             value: value.to_string(),
             location,
-        }))
+        }
+        .into())
     }
 }
 

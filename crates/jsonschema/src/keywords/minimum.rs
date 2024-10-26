@@ -107,24 +107,27 @@ pub(crate) fn compile<'a>(
     if let Value::Number(limit) = schema {
         let location = ctx.location().join("minimum");
         if let Some(limit) = limit.as_u64() {
-            Some(Ok(Box::new(MinimumU64Validator {
+            Some(Ok(MinimumU64Validator {
                 limit,
                 limit_val: schema.clone(),
                 location,
-            })))
+            }
+            .into()))
         } else if let Some(limit) = limit.as_i64() {
-            Some(Ok(Box::new(MinimumI64Validator {
+            Some(Ok(MinimumI64Validator {
                 limit,
                 limit_val: schema.clone(),
                 location,
-            })))
+            }
+            .into()))
         } else {
             let limit = limit.as_f64().expect("Always valid");
-            Some(Ok(Box::new(MinimumF64Validator {
+            Some(Ok(MinimumF64Validator {
                 limit,
                 limit_val: schema.clone(),
                 location,
-            })))
+            }
+            .into()))
         }
     } else {
         Some(Err(ValidationError::single_type_error(

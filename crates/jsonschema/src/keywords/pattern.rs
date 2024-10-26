@@ -91,11 +91,12 @@ impl PatternValidator {
                     cache.insert(item.clone(), regex.clone());
                     regex
                 };
-                Ok(Box::new(PatternValidator {
+                Ok(PatternValidator {
                     original: item.clone(),
                     pattern,
                     location: ctx.location().join("pattern"),
-                }))
+                }
+                .into())
             }
             _ => Err(ValidationError::single_type_error(
                 Location::new(),

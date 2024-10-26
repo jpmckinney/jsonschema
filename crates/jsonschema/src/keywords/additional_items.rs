@@ -10,7 +10,7 @@ use crate::{
 use serde_json::{Map, Value};
 
 pub(crate) struct AdditionalItemsObjectValidator {
-    node: SchemaNode,
+    node: Box<SchemaNode>,
     items_count: usize,
 }
 impl AdditionalItemsObjectValidator {
@@ -20,11 +20,8 @@ impl AdditionalItemsObjectValidator {
         schema: &'a Value,
         items_count: usize,
     ) -> CompilationResult<'a> {
-        let node = compiler::compile(ctx, ctx.as_resource_ref(schema))?;
-        Ok(Box::new(AdditionalItemsObjectValidator {
-            node,
-            items_count,
-        }))
+        let node = Box::new(compiler::compile(ctx, ctx.as_resource_ref(schema))?);
+        Ok(AdditionalItemsObjectValidator { node, items_count }.into())
     }
 }
 impl Validate for AdditionalItemsObjectValidator {
@@ -75,10 +72,11 @@ pub(crate) struct AdditionalItemsBooleanValidator {
 impl AdditionalItemsBooleanValidator {
     #[inline]
     pub(crate) fn compile<'a>(items_count: usize, location: Location) -> CompilationResult<'a> {
-        Ok(Box::new(AdditionalItemsBooleanValidator {
+        Ok(AdditionalItemsBooleanValidator {
             items_count,
             location,
-        }))
+        }
+        .into())
     }
 }
 impl Validate for AdditionalItemsBooleanValidator {

@@ -78,15 +78,16 @@ macro_rules! iter_errors {
 /// }
 /// ```
 pub(crate) struct AdditionalPropertiesValidator {
-    node: SchemaNode,
+    node: Box<SchemaNode>,
 }
 impl AdditionalPropertiesValidator {
     #[inline]
     pub(crate) fn compile<'a>(schema: &'a Value, ctx: &compiler::Context) -> CompilationResult<'a> {
         let ctx = ctx.new_at_location("additionalProperties");
-        Ok(Box::new(AdditionalPropertiesValidator {
-            node: compiler::compile(&ctx, ctx.as_resource_ref(schema))?,
-        }))
+        Ok(AdditionalPropertiesValidator {
+            node: Box::new(compiler::compile(&ctx, ctx.as_resource_ref(schema))?),
+        }
+        .into())
     }
 }
 impl Validate for AdditionalPropertiesValidator {
@@ -161,7 +162,7 @@ pub(crate) struct AdditionalPropertiesFalseValidator {
 impl AdditionalPropertiesFalseValidator {
     #[inline]
     pub(crate) fn compile<'a>(location: Location) -> CompilationResult<'a> {
-        Ok(Box::new(AdditionalPropertiesFalseValidator { location }))
+        Ok(AdditionalPropertiesFalseValidator { location }.into())
     }
 }
 impl Validate for AdditionalPropertiesFalseValidator {
@@ -219,10 +220,11 @@ impl AdditionalPropertiesNotEmptyFalseValidator<SmallValidatorsMap> {
         map: &'a Map<String, Value>,
         ctx: &compiler::Context,
     ) -> CompilationResult<'a> {
-        Ok(Box::new(AdditionalPropertiesNotEmptyFalseValidator {
+        Ok(AdditionalPropertiesNotEmptyFalseValidator {
             properties: compile_small_map(ctx, map)?,
             location: ctx.location().join("additionalProperties"),
-        }))
+        }
+        .into())
     }
 }
 impl AdditionalPropertiesNotEmptyFalseValidator<BigValidatorsMap> {
@@ -231,10 +233,11 @@ impl AdditionalPropertiesNotEmptyFalseValidator<BigValidatorsMap> {
         map: &'a Map<String, Value>,
         ctx: &compiler::Context,
     ) -> CompilationResult<'a> {
-        Ok(Box::new(AdditionalPropertiesNotEmptyFalseValidator {
+        Ok(AdditionalPropertiesNotEmptyFalseValidator {
             properties: compile_big_map(ctx, map)?,
             location: ctx.location().join("additionalProperties"),
-        }))
+        }
+        .into())
     }
 }
 impl<M: PropertiesValidatorsMap> Validate for AdditionalPropertiesNotEmptyFalseValidator<M> {
@@ -354,7 +357,7 @@ impl<M: PropertiesValidatorsMap> core::fmt::Display
 /// }
 /// ```
 pub(crate) struct AdditionalPropertiesNotEmptyValidator<M: PropertiesValidatorsMap> {
-    node: SchemaNode,
+    node: Box<SchemaNode>,
     properties: M,
 }
 impl AdditionalPropertiesNotEmptyValidator<SmallValidatorsMap> {
@@ -365,10 +368,11 @@ impl AdditionalPropertiesNotEmptyValidator<SmallValidatorsMap> {
         schema: &'a Value,
     ) -> CompilationResult<'a> {
         let kctx = ctx.new_at_location("additionalProperties");
-        Ok(Box::new(AdditionalPropertiesNotEmptyValidator {
+        Ok(AdditionalPropertiesNotEmptyValidator {
             properties: compile_small_map(ctx, map)?,
-            node: compiler::compile(&kctx, kctx.as_resource_ref(schema))?,
-        }))
+            node: Box::new(compiler::compile(&kctx, kctx.as_resource_ref(schema))?),
+        }
+        .into())
     }
 }
 impl AdditionalPropertiesNotEmptyValidator<BigValidatorsMap> {
@@ -379,10 +383,11 @@ impl AdditionalPropertiesNotEmptyValidator<BigValidatorsMap> {
         schema: &'a Value,
     ) -> CompilationResult<'a> {
         let kctx = ctx.new_at_location("additionalProperties");
-        Ok(Box::new(AdditionalPropertiesNotEmptyValidator {
+        Ok(AdditionalPropertiesNotEmptyValidator {
             properties: compile_big_map(ctx, map)?,
-            node: compiler::compile(&kctx, kctx.as_resource_ref(schema))?,
-        }))
+            node: Box::new(compiler::compile(&kctx, kctx.as_resource_ref(schema))?),
+        }
+        .into())
     }
 }
 impl<M: PropertiesValidatorsMap> Validate for AdditionalPropertiesNotEmptyValidator<M> {
@@ -479,7 +484,7 @@ impl<M: PropertiesValidatorsMap> Validate for AdditionalPropertiesNotEmptyValida
 /// }
 /// ```
 pub(crate) struct AdditionalPropertiesWithPatternsValidator {
-    node: SchemaNode,
+    node: Box<SchemaNode>,
     patterns: PatternedValidators,
     /// We need this because `compiler::compile` uses the additionalProperties keyword to compile
     /// this validator. That means that the schema node which contains this validator has
@@ -496,12 +501,13 @@ impl AdditionalPropertiesWithPatternsValidator {
         patterns: PatternedValidators,
     ) -> CompilationResult<'a> {
         let kctx = ctx.new_at_location("additionalProperties");
-        Ok(Box::new(AdditionalPropertiesWithPatternsValidator {
-            node: compiler::compile(&kctx, kctx.as_resource_ref(schema))?,
+        Ok(AdditionalPropertiesWithPatternsValidator {
+            node: Box::new(compiler::compile(&kctx, kctx.as_resource_ref(schema))?),
             patterns,
             pattern_keyword_path: ctx.location().join("patternProperties"),
             pattern_keyword_absolute_location: ctx.new_at_location("patternProperties").base_uri(),
-        }))
+        }
+        .into())
     }
 }
 impl Validate for AdditionalPropertiesWithPatternsValidator {
@@ -642,12 +648,13 @@ impl AdditionalPropertiesWithPatternsFalseValidator {
         ctx: &compiler::Context,
         patterns: PatternedValidators,
     ) -> CompilationResult<'a> {
-        Ok(Box::new(AdditionalPropertiesWithPatternsFalseValidator {
+        Ok(AdditionalPropertiesWithPatternsFalseValidator {
             patterns,
             location: ctx.location().join("additionalProperties"),
             pattern_keyword_path: ctx.location().join("patternProperties"),
             pattern_keyword_absolute_location: ctx.new_at_location("patternProperties").base_uri(),
-        }))
+        }
+        .into())
     }
 }
 impl Validate for AdditionalPropertiesWithPatternsFalseValidator {
@@ -795,7 +802,7 @@ impl Validate for AdditionalPropertiesWithPatternsFalseValidator {
 /// }
 /// ```
 pub(crate) struct AdditionalPropertiesWithPatternsNotEmptyValidator<M: PropertiesValidatorsMap> {
-    node: SchemaNode,
+    node: Box<SchemaNode>,
     properties: M,
     patterns: PatternedValidators,
 }
@@ -808,13 +815,12 @@ impl AdditionalPropertiesWithPatternsNotEmptyValidator<SmallValidatorsMap> {
         patterns: PatternedValidators,
     ) -> CompilationResult<'a> {
         let kctx = ctx.new_at_location("additionalProperties");
-        Ok(Box::new(
-            AdditionalPropertiesWithPatternsNotEmptyValidator {
-                node: compiler::compile(&kctx, kctx.as_resource_ref(schema))?,
-                properties: compile_small_map(ctx, map)?,
-                patterns,
-            },
-        ))
+        Ok(AdditionalPropertiesWithPatternsNotEmptyValidator {
+            node: Box::new(compiler::compile(&kctx, kctx.as_resource_ref(schema))?),
+            properties: compile_small_map(ctx, map)?,
+            patterns,
+        }
+        .into())
     }
 }
 impl AdditionalPropertiesWithPatternsNotEmptyValidator<BigValidatorsMap> {
@@ -826,13 +832,12 @@ impl AdditionalPropertiesWithPatternsNotEmptyValidator<BigValidatorsMap> {
         patterns: PatternedValidators,
     ) -> CompilationResult<'a> {
         let kctx = ctx.new_at_location("additionalProperties");
-        Ok(Box::new(
-            AdditionalPropertiesWithPatternsNotEmptyValidator {
-                node: compiler::compile(&kctx, kctx.as_resource_ref(schema))?,
-                properties: compile_big_map(ctx, map)?,
-                patterns,
-            },
-        ))
+        Ok(AdditionalPropertiesWithPatternsNotEmptyValidator {
+            node: Box::new(compiler::compile(&kctx, kctx.as_resource_ref(schema))?),
+            properties: compile_big_map(ctx, map)?,
+            patterns,
+        }
+        .into())
     }
 }
 impl<M: PropertiesValidatorsMap> Validate for AdditionalPropertiesWithPatternsNotEmptyValidator<M> {
@@ -1012,13 +1017,14 @@ impl AdditionalPropertiesWithPatternsNotEmptyFalseValidator<SmallValidatorsMap> 
         ctx: &compiler::Context,
         patterns: PatternedValidators,
     ) -> CompilationResult<'a> {
-        Ok(Box::new(
+        Ok(
             AdditionalPropertiesWithPatternsNotEmptyFalseValidator::<SmallValidatorsMap> {
                 properties: compile_small_map(ctx, map)?,
                 patterns,
                 location: ctx.location().join("additionalProperties"),
-            },
-        ))
+            }
+            .into(),
+        )
     }
 }
 impl AdditionalPropertiesWithPatternsNotEmptyFalseValidator<BigValidatorsMap> {
@@ -1028,13 +1034,12 @@ impl AdditionalPropertiesWithPatternsNotEmptyFalseValidator<BigValidatorsMap> {
         ctx: &compiler::Context,
         patterns: PatternedValidators,
     ) -> CompilationResult<'a> {
-        Ok(Box::new(
-            AdditionalPropertiesWithPatternsNotEmptyFalseValidator {
-                properties: compile_big_map(ctx, map)?,
-                patterns,
-                location: ctx.location().join("additionalProperties"),
-            },
-        ))
+        Ok(AdditionalPropertiesWithPatternsNotEmptyFalseValidator {
+            properties: compile_big_map(ctx, map)?,
+            patterns,
+            location: ctx.location().join("additionalProperties"),
+        }
+        .into())
     }
 }
 

@@ -46,7 +46,7 @@ impl MultipleTypesValidator {
                 }
             }
         }
-        Ok(Box::new(MultipleTypesValidator { types, location }))
+        Ok(MultipleTypesValidator { types, location }.into())
     }
 }
 
@@ -89,7 +89,7 @@ pub(crate) struct NullTypeValidator {
 impl NullTypeValidator {
     #[inline]
     pub(crate) fn compile<'a>(location: Location) -> CompilationResult<'a> {
-        Ok(Box::new(NullTypeValidator { location }))
+        Ok(NullTypeValidator { location }.into())
     }
 }
 
@@ -122,7 +122,7 @@ pub(crate) struct BooleanTypeValidator {
 impl BooleanTypeValidator {
     #[inline]
     pub(crate) fn compile<'a>(location: Location) -> CompilationResult<'a> {
-        Ok(Box::new(BooleanTypeValidator { location }))
+        Ok(BooleanTypeValidator { location }.into())
     }
 }
 
@@ -155,7 +155,7 @@ pub(crate) struct StringTypeValidator {
 impl StringTypeValidator {
     #[inline]
     pub(crate) fn compile<'a>(location: Location) -> CompilationResult<'a> {
-        Ok(Box::new(StringTypeValidator { location }))
+        Ok(StringTypeValidator { location }.into())
     }
 }
 
@@ -189,7 +189,7 @@ pub(crate) struct ArrayTypeValidator {
 impl ArrayTypeValidator {
     #[inline]
     pub(crate) fn compile<'a>(location: Location) -> CompilationResult<'a> {
-        Ok(Box::new(ArrayTypeValidator { location }))
+        Ok(ArrayTypeValidator { location }.into())
     }
 }
 
@@ -223,7 +223,7 @@ pub(crate) struct ObjectTypeValidator {
 impl ObjectTypeValidator {
     #[inline]
     pub(crate) fn compile<'a>(location: Location) -> CompilationResult<'a> {
-        Ok(Box::new(ObjectTypeValidator { location }))
+        Ok(ObjectTypeValidator { location }.into())
     }
 }
 
@@ -256,7 +256,7 @@ pub(crate) struct NumberTypeValidator {
 impl NumberTypeValidator {
     #[inline]
     pub(crate) fn compile<'a>(location: Location) -> CompilationResult<'a> {
-        Ok(Box::new(NumberTypeValidator { location }))
+        Ok(NumberTypeValidator { location }.into())
     }
 }
 
@@ -289,7 +289,7 @@ pub(crate) struct IntegerTypeValidator {
 impl IntegerTypeValidator {
     #[inline]
     pub(crate) fn compile<'a>(location: Location) -> CompilationResult<'a> {
-        Ok(Box::new(IntegerTypeValidator { location }))
+        Ok(IntegerTypeValidator { location }.into())
     }
 }
 

@@ -33,16 +33,31 @@ pub(crate) struct UnevaluatedItemsValidator<F: ItemsFilter> {
     filter: F,
 }
 
-impl<F: ItemsFilter> UnevaluatedItemsValidator<F> {
+impl UnevaluatedItemsValidator<Draft2019ItemsFilter> {
     #[inline]
     pub(crate) fn compile<'a>(
         ctx: &'a compiler::Context,
         parent: &'a Map<String, Value>,
     ) -> CompilationResult<'a> {
-        Ok(Box::new(UnevaluatedItemsValidator {
+        Ok(UnevaluatedItemsValidator {
             location: ctx.location().join("unevaluatedItems"),
-            filter: F::new(ctx, parent)?,
-        }))
+            filter: Draft2019ItemsFilter::new(ctx, parent)?,
+        }
+        .into())
+    }
+}
+
+impl UnevaluatedItemsValidator<DefaultItemsFilter> {
+    #[inline]
+    pub(crate) fn compile<'a>(
+        ctx: &'a compiler::Context,
+        parent: &'a Map<String, Value>,
+    ) -> CompilationResult<'a> {
+        Ok(UnevaluatedItemsValidator {
+            location: ctx.location().join("unevaluatedItems"),
+            filter: DefaultItemsFilter::new(ctx, parent)?,
+        }
+        .into())
     }
 }
 
@@ -90,9 +105,9 @@ impl<F: ItemsFilter> Validate for UnevaluatedItemsValidator<F> {
     }
 }
 
-struct Draft2019ItemsFilter {
-    unevaluated: Option<SchemaNode>,
-    contains: Option<SchemaNode>,
+pub(crate) struct Draft2019ItemsFilter {
+    unevaluated: Option<Box<SchemaNode>>,
+    contains: Option<Box<SchemaNode>>,
     ref_: Option<Box<Self>>,
     recursive_ref: Option<Box<Self>>,
     items: Option<usize>,
@@ -147,11 +162,17 @@ impl ItemsFilter for Draft2019ItemsFilter {
 
         let mut contains = None;
         if let Some(subschema) = parent.get("contains") {
-            contains = Some(compiler::compile(ctx, ctx.as_resource_ref(subschema))?);
+            contains = Some(Box::new(compiler::compile(
+                ctx,
+                ctx.as_resource_ref(subschema),
+            )?));
         };
         let mut unevaluated = None;
         if let Some(subschema) = parent.get("unevaluatedItems") {
-            unevaluated = Some(compiler::compile(ctx, ctx.as_resource_ref(subschema))?);
+            unevaluated = Some(Box::new(compiler::compile(
+                ctx,
+                ctx.as_resource_ref(subschema),
+            )?));
         };
         let mut all_of = None;
         if let Some(Some(subschemas)) = parent.get("allOf").map(Value::as_array) {
@@ -191,7 +212,7 @@ impl ItemsFilter for Draft2019ItemsFilter {
         })
     }
     fn unevaluated(&self) -> Option<&SchemaNode> {
-        self.unevaluated.as_ref()
+        self.unevaluated.as_deref()
     }
     fn mark_evaluated_indexes(&self, instance: &Value, indexes: &mut Vec<bool>) {
         if let Some(limit) = self.items {
@@ -264,9 +285,9 @@ impl ItemsFilter for Draft2019ItemsFilter {
     }
 }
 
-struct DefaultItemsFilter {
-    unevaluated: Option<SchemaNode>,
-    contains: Option<SchemaNode>,
+pub(crate) struct DefaultItemsFilter {
+    unevaluated: Option<Box<SchemaNode>>,
+    contains: Option<Box<SchemaNode>>,
     ref_: Option<Box<Self>>,
     dynamic_ref: Option<Box<Self>>,
     items: bool,
@@ -328,11 +349,17 @@ impl ItemsFilter for DefaultItemsFilter {
 
         let mut contains = None;
         if let Some(subschema) = parent.get("contains") {
-            contains = Some(compiler::compile(ctx, ctx.as_resource_ref(subschema))?);
+            contains = Some(Box::new(compiler::compile(
+                ctx,
+                ctx.as_resource_ref(subschema),
+            )?));
         };
         let mut unevaluated = None;
         if let Some(subschema) = parent.get("unevaluatedItems") {
-            unevaluated = Some(compiler::compile(ctx, ctx.as_resource_ref(subschema))?);
+            unevaluated = Some(Box::new(compiler::compile(
+                ctx,
+                ctx.as_resource_ref(subschema),
+            )?));
         };
         let mut all_of = None;
         if let Some(Some(subschemas)) = parent.get("allOf").map(Value::as_array) {
@@ -362,7 +389,7 @@ impl ItemsFilter for DefaultItemsFilter {
         })
     }
     fn unevaluated(&self) -> Option<&SchemaNode> {
-        self.unevaluated.as_ref()
+        self.unevaluated.as_deref()
     }
 
     fn mark_evaluated_indexes(&self, instance: &Value, indexes: &mut Vec<bool>) {

@@ -12,16 +12,17 @@ use serde_json::{Map, Value};
 use super::helpers::map_get_u64;
 
 pub(crate) struct ContainsValidator {
-    node: SchemaNode,
+    node: Box<SchemaNode>,
 }
 
 impl ContainsValidator {
     #[inline]
     pub(crate) fn compile<'a>(ctx: &compiler::Context, schema: &'a Value) -> CompilationResult<'a> {
         let ctx = ctx.new_at_location("contains");
-        Ok(Box::new(ContainsValidator {
-            node: compiler::compile(&ctx, ctx.as_resource_ref(schema))?,
-        }))
+        Ok(ContainsValidator {
+            node: Box::new(compiler::compile(&ctx, ctx.as_resource_ref(schema))?),
+        }
+        .into())
     }
 }
 
@@ -91,7 +92,7 @@ impl Validate for ContainsValidator {
 ///
 /// Docs: <https://json-schema.org/draft/2019-09/json-schema-validation.html#rfc.section.6.4.5>
 pub(crate) struct MinContainsValidator {
-    node: SchemaNode,
+    node: Box<SchemaNode>,
     min_contains: u64,
 }
 
@@ -103,10 +104,11 @@ impl MinContainsValidator {
         min_contains: u64,
     ) -> CompilationResult<'a> {
         let ctx = ctx.new_at_location("minContains");
-        Ok(Box::new(MinContainsValidator {
-            node: compiler::compile(&ctx, ctx.as_resource_ref(schema))?,
+        Ok(MinContainsValidator {
+            node: Box::new(compiler::compile(&ctx, ctx.as_resource_ref(schema))?),
             min_contains,
-        }))
+        }
+        .into())
     }
 }
 
@@ -170,7 +172,7 @@ impl Validate for MinContainsValidator {
 ///
 /// Docs: <https://json-schema.org/draft/2019-09/json-schema-validation.html#rfc.section.6.4.4>
 pub(crate) struct MaxContainsValidator {
-    node: SchemaNode,
+    node: Box<SchemaNode>,
     max_contains: u64,
 }
 
@@ -182,10 +184,11 @@ impl MaxContainsValidator {
         max_contains: u64,
     ) -> CompilationResult<'a> {
         let ctx = ctx.new_at_location("maxContains");
-        Ok(Box::new(MaxContainsValidator {
-            node: compiler::compile(&ctx, ctx.as_resource_ref(schema))?,
+        Ok(MaxContainsValidator {
+            node: Box::new(compiler::compile(&ctx, ctx.as_resource_ref(schema))?),
             max_contains,
-        }))
+        }
+        .into())
     }
 }
 
@@ -255,7 +258,7 @@ impl Validate for MaxContainsValidator {
 ///   `maxContains` - <https://json-schema.org/draft/2019-09/json-schema-validation.html#rfc.section.6.4.4>
 ///   `minContains` - <https://json-schema.org/draft/2019-09/json-schema-validation.html#rfc.section.6.4.5>
 pub(crate) struct MinMaxContainsValidator {
-    node: SchemaNode,
+    node: Box<SchemaNode>,
     min_contains: u64,
     max_contains: u64,
 }
@@ -268,11 +271,12 @@ impl MinMaxContainsValidator {
         min_contains: u64,
         max_contains: u64,
     ) -> CompilationResult<'a> {
-        Ok(Box::new(MinMaxContainsValidator {
-            node: compiler::compile(ctx, ctx.as_resource_ref(schema))?,
+        Ok(MinMaxContainsValidator {
+            node: Box::new(compiler::compile(ctx, ctx.as_resource_ref(schema))?),
             min_contains,
             max_contains,
-        }))
+        }
+        .into())
     }
 }
 

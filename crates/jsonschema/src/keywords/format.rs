@@ -616,14 +616,14 @@ fn is_valid_uuid(uuid: &str) -> bool {
 macro_rules! format_validators {
     ($(($validator:ident, $format:expr, $validation_fn:ident)),+ $(,)?) => {
         $(
-            struct $validator {
+            pub(crate) struct $validator {
                 location: Location,
             }
 
             impl $validator {
                 pub(crate) fn compile<'a>(ctx: &compiler::Context) -> CompilationResult<'a> {
                     let location = ctx.location().join("format");
-                    Ok(Box::new($validator { location }))
+                    Ok($validator { location }.into())
                 }
             }
 
@@ -691,11 +691,12 @@ format_validators!(
     (UuidValidator, "uuid", is_valid_uuid),
 );
 
-struct CustomFormatValidator {
+pub(crate) struct CustomFormatValidator {
     location: Location,
     format_name: String,
     check: Arc<dyn Format>,
 }
+
 impl CustomFormatValidator {
     pub(crate) fn compile<'a>(
         ctx: &compiler::Context,
@@ -703,11 +704,12 @@ impl CustomFormatValidator {
         check: Arc<dyn Format>,
     ) -> CompilationResult<'a> {
         let location = ctx.location().join("format");
-        Ok(Box::new(CustomFormatValidator {
+        Ok(CustomFormatValidator {
             location,
             format_name,
             check,
-        }))
+        }
+        .into())
     }
 }
 

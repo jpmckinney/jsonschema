@@ -9,16 +9,17 @@ use crate::{
 use serde_json::{Map, Value};
 
 pub(crate) struct PropertyNamesObjectValidator {
-    node: SchemaNode,
+    node: Box<SchemaNode>,
 }
 
 impl PropertyNamesObjectValidator {
     #[inline]
     pub(crate) fn compile<'a>(ctx: &compiler::Context, schema: &'a Value) -> CompilationResult<'a> {
         let ctx = ctx.new_at_location("propertyNames");
-        Ok(Box::new(PropertyNamesObjectValidator {
-            node: compiler::compile(&ctx, ctx.as_resource_ref(schema))?,
-        }))
+        Ok(PropertyNamesObjectValidator {
+            node: Box::new(compiler::compile(&ctx, ctx.as_resource_ref(schema))?),
+        }
+        .into())
     }
 }
 
@@ -108,7 +109,7 @@ impl PropertyNamesBooleanValidator {
     #[inline]
     pub(crate) fn compile<'a>(ctx: &compiler::Context) -> CompilationResult<'a> {
         let location = ctx.location().join("propertyNames");
-        Ok(Box::new(PropertyNamesBooleanValidator { location }))
+        Ok(PropertyNamesBooleanValidator { location }.into())
     }
 }
 

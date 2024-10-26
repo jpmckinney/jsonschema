@@ -26,10 +26,11 @@ impl OneOfValidator {
                 let node = compiler::compile(&ctx, ctx.as_resource_ref(item))?;
                 schemas.push(node)
             }
-            Ok(Box::new(OneOfValidator {
+            Ok(OneOfValidator {
                 schemas,
                 location: ctx.location().clone(),
-            }))
+            }
+            .into())
         } else {
             Err(ValidationError::single_type_error(
                 Location::new(),

@@ -25,11 +25,12 @@ impl ContentMediaTypeValidator {
         func: ContentMediaTypeCheckType,
         location: Location,
     ) -> CompilationResult {
-        Ok(Box::new(ContentMediaTypeValidator {
+        Ok(ContentMediaTypeValidator {
             media_type: media_type.to_string(),
             func,
             location,
-        }))
+        }
+        .into())
     }
 }
 
@@ -79,11 +80,12 @@ impl ContentEncodingValidator {
         func: ContentEncodingCheckType,
         location: Location,
     ) -> CompilationResult {
-        Ok(Box::new(ContentEncodingValidator {
+        Ok(ContentEncodingValidator {
             encoding: encoding.to_string(),
             func,
             location,
-        }))
+        }
+        .into())
     }
 }
 
@@ -136,13 +138,14 @@ impl ContentMediaTypeAndEncodingValidator {
         converter: ContentEncodingConverterType,
         location: Location,
     ) -> CompilationResult<'a> {
-        Ok(Box::new(ContentMediaTypeAndEncodingValidator {
+        Ok(ContentMediaTypeAndEncodingValidator {
             media_type: media_type.to_string(),
             encoding: encoding.to_string(),
             func,
             converter,
             location,
-        }))
+        }
+        .into())
     }
 }
 
