@@ -144,7 +144,9 @@ validator.is_valid("not a date")  # False
 
 # With ignore_unknown_formats=False, using an unknown format will raise an error
 invalid_schema = {"type": "string", "format": "unknown"}
-jsonschema_rs.Draft202012Validator(invalid_schema, ignore_unknown_formats=False)  # Raises an error
+jsonschema_rs.Draft202012Validator(
+    invalid_schema, validate_formats=True, ignore_unknown_formats=False
+)  # Raises an error
 ```
 
 ## Performance
